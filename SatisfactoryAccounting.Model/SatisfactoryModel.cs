@@ -63,6 +63,7 @@ public class Recipe
     public string RelevantEvents { get; set; }
     public double VariablePowerConsumptionConstant { get; set; }
     public double VariablePowerConsumptionFactor { get; set; }
+    public bool IsAlternate => DisplayName.StartsWith("Alternate:");
 
     public List<ItemRate> IngredientsPerMinute => Ingredients.Select(ingredient => new ItemRate
     {
@@ -151,7 +152,6 @@ public class BuildableManufacturer
     public bool HideOnBuildEffectStart { get; set; }
     public bool ShouldModifyWorldGrid { get; set; }
 }
-
 
 public class ItemRate
 {
