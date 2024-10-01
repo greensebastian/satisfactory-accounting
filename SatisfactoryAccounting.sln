@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SatisfactoryAccounting.Client", "SatisfactoryAccounting.Client\SatisfactoryAccounting.Client.csproj", "{E77AFDF8-0705-4904-A819-EDF80DECA5D8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SatisfactoryAccounting.Model", "SatisfactoryAccounting.Model\SatisfactoryAccounting.Model.csproj", "{AFBAB63D-CC48-446D-BEE1-B3D57DE53669}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SatisfactoryAccounting.Tests", "SatisfactoryAccounting.Tests\SatisfactoryAccounting.Tests.csproj", "{A55F31F1-F64B-4540-B977-0B3B3D45FB19}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E77AFDF8-0705-4904-A819-EDF80DECA5D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E77AFDF8-0705-4904-A819-EDF80DECA5D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E77AFDF8-0705-4904-A819-EDF80DECA5D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E77AFDF8-0705-4904-A819-EDF80DECA5D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AFBAB63D-CC48-446D-BEE1-B3D57DE53669}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AFBAB63D-CC48-446D-BEE1-B3D57DE53669}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AFBAB63D-CC48-446D-BEE1-B3D57DE53669}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AFBAB63D-CC48-446D-BEE1-B3D57DE53669}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A55F31F1-F64B-4540-B977-0B3B3D45FB19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A55F31F1-F64B-4540-B977-0B3B3D45FB19}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A55F31F1-F64B-4540-B977-0B3B3D45FB19}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A55F31F1-F64B-4540-B977-0B3B3D45FB19}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

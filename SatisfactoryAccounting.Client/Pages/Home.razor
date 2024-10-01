@@ -1,0 +1,36 @@
+﻿@page "/"
+@using SatisfactoryAccounting.Model
+
+@inject SatisfactoryModelProvider SatisfactoryModelProvider
+@inject ILogger<Home> Logger
+
+<PageTitle>TOVE ÄR BÄST 🍆</PageTitle>
+
+<h1>Hello, world!</h1>
+
+There are @SatisfactoryModel.Recipes.Count recipes loaded!
+<button @onclick="LoadModel"></button>
+
+@code {
+    private SatisfactoryModel SatisfactoryModel { get; set; } = new();
+    
+    protected override Task OnInitializedAsync()
+    {
+        Logger.LogInformation("Initialized!");
+        return Task.CompletedTask;
+    }
+
+    private async Task LoadModel()
+    {
+        try
+        {
+            SatisfactoryModel = await SatisfactoryModelProvider.GetModel();
+            Logger.LogInformation("Initialized!");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load model");
+        }
+        
+    }
+}
