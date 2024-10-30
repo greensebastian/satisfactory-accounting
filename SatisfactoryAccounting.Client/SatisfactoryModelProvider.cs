@@ -6,7 +6,7 @@ public class SatisfactoryModelProvider(HttpClient httpClient)
 {
     private SemaphoreSlim CacheSemaphore { get; } = new(1, 1);
     private SatisfactoryModel? CachedSatisfactoryModel { get; set; }
-    
+
     public async Task<SatisfactoryModel> GetModel()
     {
         await CacheSemaphore.WaitAsync();

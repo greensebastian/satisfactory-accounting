@@ -1,179 +1,66 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text.RegularExpressions;
+using Newtonsoft.Json.Linq;
 
 namespace SatisfactoryAccounting.Model;
 
 public class SatisfactoryModel
 {
-    public Guid Id { get; set; }
-    public List<Recipe> Recipes { get; set; } = [];
+    public SatisfactoryResourceCollection<Recipe> Recipes { get; }
 
-    public List<ResourceDescriptor> ResourceDescriptors { get; set; } = [];
-
-    public List<ItemDescriptor> ItemDescriptors { get; set; } = [];
-
-    public List<BuildableManufacturer> BuildableManufacturers { get; set; } = [];
-}
-
-public class Descriptor
-{
-    public string ClassName { get; set; }
-    public string FullName { get; set; }
-    public string DisplayName { get; set; }
-    public string AbbreviatedDisplayName { get; set; }
-    public string Description { get; set; }
-    public StackSize StackSize { get; set; }
-    public Form Form { get; set; }
-    public bool CanBeDiscarded { get; set; }
-    public bool RememberPickUp { get; set; }
-    public double EnergyValue { get; set; }
-    public double RadioactiveDecay { get; set; }
-    public string SmallIcon { get; set; }
-    public string PersistentBigIcon { get; set; }
-    public string SubCategories { get; set; }
-    public double MenuPriority { get; set; }
-    public string FluidColor { get; set; }
-    public string GasColor { get; set; }
-    public double BuildMenuPriority { get; set; }
-}
-
-public class ResourceDescriptor : Descriptor
-{
-    public double DecalSize { get; set; }
-    public string PingColor { get; set; }
-    public double CollectSpeedMultiplier { get; set; }
-    public string ManualMiningAudioName { get; set; }
-}
-
-public class ItemDescriptor : Descriptor
-{
-    public double ResourceSinkPoints { get; set; }
-}
-
-public class Recipe
-{
-    public string ClassName { get; set; }
-    public string FullName { get; set; }
-    public string DisplayName { get; set; }
-    public List<ItemRate> Ingredients { get; set; }
-    public List<ItemRate> Product { get; set; }
-    public double ManufacturingMenuPriority { get; set; }
-    public double ManufactoringDuration { get; set; }
-    public double ManualManufacturingMultiplier { get; set; }
-    public List<string> ProducedIn { get; set; }
-    public string RelevantEvents { get; set; }
-    public double VariablePowerConsumptionConstant { get; set; }
-    public double VariablePowerConsumptionFactor { get; set; }
-    public bool IsAlternate => DisplayName.StartsWith("Alternate:");
-
-    public List<ItemRate> IngredientsPerMinute => Ingredients.Select(ingredient => new ItemRate
+    public SatisfactoryModel(List<IntermediateSatisfactoryResourceCollection> resourceCollections)
     {
-        ClassName = ingredient.ClassName,
-        Amount = ingredient.Amount * 60 / ManufactoringDuration
-    }).ToList();
-
-    public List<ItemRate> ProductPerMinute => Product.Select(product => new ItemRate
-    {
-        ClassName = product.ClassName,
-        Amount = product.Amount * 60 / ManufactoringDuration
-    }).ToList();
-
-    public override string ToString()
-    {
-        var sb = new StringBuilder();
-        sb.AppendLine($"{DisplayName}\t{ClassName}");
-        sb.AppendLine();
-
-        sb.AppendLine("Input:");
-        foreach (var ingredient in IngredientsPerMinute)
-        {
-            sb.AppendLine($"{ingredient.Amount}\t{ingredient.ClassName}");
-        }
-        sb.AppendLine();
-
-        sb.AppendLine("Output:");
-        foreach (var product in ProductPerMinute)
-        {
-            sb.AppendLine($"{product.Amount}\t{product.ClassName}");
-        }
-
-        return sb.ToString();
+        Recipes = resourceCollections.Single(rc => rc.NativeClass == Recipe.NativeClass).ToType<Recipe>();
     }
 }
 
-
-public class BuildableManufacturer
+// ReSharper disable once ClassNeverInstantiated.Global
+public record IntermediateSatisfactoryResourceCollection(string NativeClass, JArray Classes)
 {
-    public string ClassName { get; set; }
-    public bool IsPowered { get; set; }
-    public string CurrentRecipeCheck { get; set; }
-    public string PreviousRecipeCheck { get; set; }
-    public string CurrentPotentialConvert { get; set; }
-    public string CurrentRecipeChanged { get; set; }
-    public double ManufacturingSpeed { get; set; }
-    public string FactoryInputConnections { get; set; }
-    public string PipeInputConnections { get; set; }
-    public string FactoryOutputConnections { get; set; }
-    public string PipeOutputConnections { get; set; }
-    public double PowerConsumption { get; set; }
-    public double PowerConsumptionExponent { get; set; }
-    public bool DoesHaveShutdownAnimation { get; set; }
-    public string OnHasPowerChanged { get; set; }
-    public string OnHasProductionChanged { get; set; }
-    public string OnHasStandbyChanged { get; set; }
-    public double MinimumProducingTime { get; set; }
-    public double MinimumStoppedTime { get; set; }
-    public double NumCyclesForProductivity { get; set; }
-    public bool CanChangePotential { get; set; }
-    public double MinPotential { get; set; }
-    public double MaxPotential { get; set; }
-    public double MaxPotentialIncreasePerCrystal { get; set; }
-    public StackSize FluidStackSizeDefault { get; set; }
-    public double FluidStackSizeMultiplier { get; set; }
-    public string OnReplicationDetailActorCreatedEvent { get; set; }
-    public double EffectUpdateInterval { get; set; }
-    public string CachedSkeletalMeshes { get; set; }
-    public bool AddToSignificanceManager { get; set; }
-    public double SignificanceRange { get; set; }
-    public string DisplayName { get; set; }
-    public string Description { get; set; }
-    public double MaxRenderDistance { get; set; }
-    public string HighlightVector { get; set; }
-    public bool AllowColoring { get; set; }
-    public bool SkipBuildEffect { get; set; }
-    public double BuildEffectSpeed { get; set; }
-    public bool ForceNetUpdateOnRegisterPlayer { get; set; }
-    public bool ToggleDormancyOnInteraction { get; set; }
-    public bool ShouldShowHighlight { get; set; }
-    public bool ShouldShowAttachmentPointVisuals { get; set; }
-    public bool CreateClearanceMeshRepresentation { get; set; }
-    public string AttachmentPoints { get; set; }
-    public string InteractingPlayers { get; set; }
-    public bool IsUseable { get; set; }
-    public bool HideOnBuildEffectStart { get; set; }
-    public bool ShouldModifyWorldGrid { get; set; }
+    public SatisfactoryResourceCollection<T> ToType<T>() =>
+        new SatisfactoryResourceCollection<T>(NativeClass, Classes.ToObject<List<T>>() ?? []);
 }
 
-public class ItemRate
+public static class Regexes
 {
-    public string ClassName { get; set; }
-    public double Amount { get; set; }
+    public static Regex ItemClassAndAmountGroup { get; } = new(@"\((ItemClass=""[^""]+"",Amount=\d+)\)", RegexOptions.Compiled);
+    public static Regex ItemClass { get; } = new(@"ItemClass=""[^""]+\.([^""]+)""", RegexOptions.Compiled);
+    public static Regex Amount { get; } = new(@"Amount=(\d+)", RegexOptions.Compiled);
 }
 
-public enum StackSize
+public record SatisfactoryResourceCollection<TResource>(string NativeClass, List<TResource> Classes);
+
+public record Recipe(
+    string ClassName,
+    string FullName,
+    string MDisplayName,
+    string MIngredients,
+    string MProduct,
+    string MManufacturingMenuPriority,
+    string MManufactoringDuration,
+    string MManualManufacturingMultiplier,
+    string MProducedIn,
+    string MRelevantEvents,
+    string MVariablePowerConsumptionConstant,
+    string MVariablePowerConsumptionFactor
+)
 {
-    SS_ONE,
-    SS_SMALL,
-    SS_MEDIUM,
-    SS_BIG,
-    SS_LARGE,
-    SS_HUGE,
-    SS_FLUID
+    private List<ItemRate>? _ingredients;
+    private List<ItemRate>? _product;
+    public const string NativeClass = "/Script/CoreUObject.Class'/Script/FactoryGame.FGRecipe'";
+    public string DisplayName { get; } = MDisplayName;
+    public List<ItemRate> Ingredients => _ingredients ??= ItemRate.FromItemClassCollectionString(MIngredients, ManufacturingDuration);
+    public List<ItemRate> Product => _product ??= ItemRate.FromItemClassCollectionString(MProduct, ManufacturingDuration);
+    public TimeSpan ManufacturingDuration { get; } = TimeSpan.FromSeconds(double.Parse(MManufactoringDuration, CultureInfo.InvariantCulture));
 }
 
-public enum Form
+public record ItemRate(string ItemClass, double Amount)
 {
-    RF_INVALID,
-    RF_LIQUID,
-    RF_SOLID,
-    RF_GAS
-}
+    public static List<ItemRate> FromItemClassCollectionString(string itemClassCollectionString, TimeSpan manufacturingDuration)
+    {
+        var components = Regexes.ItemClassAndAmountGroup.Matches(itemClassCollectionString);
+        var perMinuteMultiplier = 60.0 / manufacturingDuration.TotalSeconds;
+        return components.Select(match => new ItemRate(Regexes.ItemClass.Match(match.Value).Groups[1].Value,
+            double.Parse(Regexes.Amount.Match(match.Value).Groups[1].Value, CultureInfo.InvariantCulture) * perMinuteMultiplier)).ToList();
+    }
+};
