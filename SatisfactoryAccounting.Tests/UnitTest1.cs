@@ -39,4 +39,13 @@ public class UnitTest1(ModelFixture fixture) : IClassFixture<ModelFixture>
         var solution = new BasicSolution(model, [new ItemRate(model.FindItemDescriptor("Rotor")!.ClassName, 1)]);
         solution.Should().NotBeNull();
     }
+    
+    [Fact]
+    public async Task CanSolveUraniumFuelRod()
+    {
+        var model = await fixture.GetModel();
+
+        var solution = new BasicSolution(model, [new ItemRate(model.FindItemDescriptor("Encased Uranium Cell")!.ClassName, 1)]);
+        solution.Should().NotBeNull();
+    }
 }
