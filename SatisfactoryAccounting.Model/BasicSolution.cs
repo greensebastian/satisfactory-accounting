@@ -102,6 +102,21 @@ public class BasicSolution
 
     private Recipe GetRecipe(string className)
     {
-        return Model.Recipes.Classes.Single(recipe => recipe.Product.Any(product => product.ItemClassName == className) && !recipe.IsAlternate);
+        var recipes = Model.Recipes.Classes.Where(recipe => recipe.Product.Any(product => product.ItemClassName == className) && !recipe.IsAlternate).ToList();
+        if (recipes.Count > 1)
+        {
+            if (recipes.All(r => r.ClassName.Contains("Plastic", StringComparison.InvariantCultureIgnoreCase)))
+            {
+                return recipes.Single(r =>
+                    !r.ClassName.Contains("Residual", StringComparison.InvariantCultureIgnoreCase));
+            }
+            throw new ApplicationException($"Multiple recipes outputting {className} found: {string.Join(", ", recipes.Select(r => r.ClassName))}");
+        }
+        if (recipes.Count > 0)
+        {
+            return recipes[0];
+        }
+
+        throw new ApplicationException($"No recipes outputting {className} found");
     }
 }

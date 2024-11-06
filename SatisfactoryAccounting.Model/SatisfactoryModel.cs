@@ -22,6 +22,9 @@ public class SatisfactoryModel
         ItemDescriptors.Classes.FirstOrDefault(r =>
             r.DisplayName.Contains(match, StringComparison.InvariantCultureIgnoreCase) ||
             r.ClassName.Contains(match, StringComparison.InvariantCultureIgnoreCase));
+    
+    public ItemDescriptor? ItemDescriptorByClassName(string className) =>
+        ItemDescriptors.Classes.FirstOrDefault(r => r.ClassName.Equals(className, StringComparison.InvariantCultureIgnoreCase));
 }
 
 // ReSharper disable once ClassNeverInstantiated.Global
@@ -35,6 +38,7 @@ public static class Regexes
     public static Regex ItemClassAndAmountGroup { get; } = new(@"\((ItemClass=""[^""]+"",Amount=\d+)\)", RegexOptions.Compiled);
     public static Regex ItemClass { get; } = new(@"ItemClass=""[^""]+\.([^""']+)'""", RegexOptions.Compiled);
     public static Regex Amount { get; } = new(@"Amount=(\d+)", RegexOptions.Compiled);
+    public static Regex ProducedIn { get; } = new(@"((?<=\.)([a-zA-Z0-9_]+))+", RegexOptions.Compiled);
 }
 
 public record SatisfactoryResourceCollection<TResource>(string NativeClass, List<TResource> Classes);
@@ -61,6 +65,16 @@ public record Recipe(
     public ItemRates Ingredients => _ingredients ??= ItemRate.FromItemClassCollectionString(MIngredients, ManufacturingDuration);
     public ItemRates Product => _product ??= ItemRate.FromItemClassCollectionString(MProduct, ManufacturingDuration);
     public TimeSpan ManufacturingDuration { get; } = TimeSpan.FromSeconds(double.Parse(MManufactoringDuration, CultureInfo.InvariantCulture));
+    public List<string> ProducedIn { get; } = Regexes.ProducedIn.Matches(MProducedIn).Select(match => match.Value).ToList();
+    public string ProducedInReadable
+    {
+        get
+        {
+            var buildPrefixed = string.Join(", ", ProducedIn.Where(name => name.StartsWith("Build_")));
+            return buildPrefixed.Length > 0 ? buildPrefixed : string.Join(", ", ProducedIn);
+        }
+    }
+
     public bool IsAlternate { get; } = ClassName.StartsWith("Recipe_Alternate_");
 
     public double GetSmallestRequiredMultiplierToMake(List<ItemRate> items) => items
@@ -87,8 +101,10 @@ public record ItemRate(string ItemClassName, double Amount)
     {
         var components = Regexes.ItemClassAndAmountGroup.Matches(itemClassCollectionString);
         var perMinuteMultiplier = 60.0 / manufacturingDuration.TotalSeconds;
-        var itemRates = components.Select(match => new ItemRate(Regexes.ItemClass.Match(match.Value).Groups[1].Value,
-            double.Parse(Regexes.Amount.Match(match.Value).Groups[1].Value, CultureInfo.InvariantCulture) * perMinuteMultiplier));
+        var itemRates = components.Select(match => new ItemRate(
+            Regexes.ItemClass.Match(match.Value).Groups[1].Value,
+            double.Parse(Regexes.Amount.Match(match.Value).Groups[1].Value, CultureInfo.InvariantCulture) *
+            perMinuteMultiplier));
         return new ItemRates(itemRates);
     }
     
