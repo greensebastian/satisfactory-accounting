@@ -9,6 +9,33 @@ public class BasicSolution
     public ItemRates DesiredProducts { get; }
     public ItemRates AvailableProducts { get; }
     public List<SolutionComponent> Components { get; } = new();
+    public List<List<SolutionComponent>> ComponentsByDependencyTier { get; }
+
+    public IEnumerable<List<SolutionComponent>> ComputeComponentsByDependencyTier()
+    {
+        var componentsToMake = Components.ToList();
+        var availableResources = Model.ResourceDescriptors.Classes.Select(c => c.ClassName).ToHashSet();
+        var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+        while (componentsToMake.Count > 0)
+        {
+            if (timeout.IsCancellationRequested)
+                throw new ApplicationException("Failed to find sorted component dependencies");
+            var ableToMake = componentsToMake.Where(component =>
+                component.Input.All(i => availableResources.Contains(i.ItemClassName))).ToList();
+            foreach (var component in ableToMake)
+            {
+                var resourcesCreated = component.Output.Select(i => i.ItemClassName);
+                foreach (var item in resourcesCreated)
+                {
+                    availableResources.Add(item);
+                }
+
+                componentsToMake.Remove(component);
+            }
+            
+            yield return ableToMake;
+        }
+    }
 
     public BasicSolution(SatisfactoryModel model, IEnumerable<ItemRate> desiredProducts, IEnumerable<ItemRate>? availableProducts = null)
     {
@@ -21,6 +48,8 @@ public class BasicSolution
         {
             AddDesiredProduct(desiredProduct);
         }
+
+        ComponentsByDependencyTier = ComputeComponentsByDependencyTier().Reverse().ToList();
     }
 
     private void AddDesiredProduct(ItemRate item)
@@ -48,7 +77,7 @@ public class BasicSolution
         foreach (var itemRate in component.AddOutput(item))
         {
             AddDesiredProduct(itemRate);
-        };
+        }
     }
     
     public class SolutionComponent(Recipe recipe)

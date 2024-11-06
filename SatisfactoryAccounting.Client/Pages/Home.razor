@@ -27,93 +27,56 @@
         </MudItem>
         @if (Solution is not null && SatisfactoryModel is not null)
         {
-            <MudItem xs="12">
-                <MudPaper Class="pa-4">
-                    <MudTable Items="SolutionTableRowElements" GroupBy="SolutionTableGroupDefinition" Hover="true">
-                        <ColGroup>
-                            <col/>
-                            <col/>
-                            <col/>
-                            <col/>
-                            <col/>
-                            <col/>
-                        </ColGroup>
-                        <HeaderContent>
-                            <MudTh>Recipe</MudTh>
-                            <MudTh>Multiplier</MudTh>
-                            <MudTh>Machine</MudTh>
-                            <MudTh>Item</MudTh>
-                            <MudTh>Amount</MudTh>
-                        </HeaderContent>
-                        <GroupHeaderTemplate>
-                            <MudTh>@context.Key</MudTh>
-                            <MudTh>@Math.Round(context.Items.First().SolutionComponent.Multiplier, 2)</MudTh>
-                            <MudTh>@context.Items.First().SolutionComponent.Recipe.ProducedInReadable</MudTh>
-                            <MudTh/>
-                            <MudTh/>
-                        </GroupHeaderTemplate>
-                        <RowTemplate>
-                            <MudTd/>
-                            <MudTd/>
-                            <MudTd/>
-                            <MudTd>@SatisfactoryModel?.ItemDescriptorByClassName(context.ItemRate.ItemClassName)?.DisplayName</MudTd>
-                            <MudTd>@Math.Round(context.ItemRate.Amount, 2)</MudTd>
-                        </RowTemplate>
-                    </MudTable>
-                </MudPaper>
-            </MudItem>
-            @foreach (var component in Solution.Components)
+            @foreach (var componentSet in Solution.ComponentsByDependencyTier)
             {
                 <MudItem xs="12">
                     <MudPaper Class="pa-4">
-                        <MudText Typo="Typo.h5">@component.Recipe.DisplayName</MudText>
-                        <MudText Typo="Typo.h6">@Math.Round(component.Multiplier * 100)% | @component.Recipe.ProducedInReadable</MudText>
-                        <MudTimeline TimelineOrientation="TimelineOrientation.Horizontal" TimelinePosition="TimelinePosition.Top">
-                            <MudTimelineItem Color="Color.Info" Variant="Variant.Filled">
-                                <ItemContent>
-                                    <MudAlert Severity="Severity.Info">
-                                        <MudTable Items="component.Input" Hover="true" Breakpoint="Breakpoint.None" Dense="true">
-                                            <HeaderContent>
-                                                <MudTh>Input</MudTh>
-                                                <MudTh>IPM</MudTh>
-                                            </HeaderContent>
-                                            <RowTemplate>
-                                                <MudTd DataLabel="Input">@(SatisfactoryModel.ItemDescriptorByClassName(context.ItemClassName)?.DisplayName ?? context.ItemClassName)</MudTd>
-                                                <MudTd DataLabel="IPM">@Math.Round(context.Amount, 2)</MudTd>
-                                            </RowTemplate>
-                                        </MudTable>
-                                    </MudAlert>
-                                </ItemContent>
-                                <ItemOpposite>
-                                    <MudText Color="Color.Info">1</MudText>
-                                </ItemOpposite>
-                            </MudTimelineItem>
-                            <MudTimelineItem Color="Color.Success" Variant="Variant.Filled">
-                                <ItemContent>
-                                    <MudAlert Severity="Severity.Success">
-                                        <MudTable Items="component.Output" Hover="true" Breakpoint="Breakpoint.None" Dense="true">
-                                            <HeaderContent>
-                                                <MudTh>Output</MudTh>
-                                                <MudTh>IPM</MudTh>
-                                            </HeaderContent>
-                                            <RowTemplate>
-                                                <MudTd DataLabel="Output">@(SatisfactoryModel.ItemDescriptorByClassName(context.ItemClassName)?.DisplayName ?? context.ItemClassName)</MudTd>
-                                                <MudTd DataLabel="IPM">@Math.Round(context.Amount, 2)</MudTd>
-                                            </RowTemplate>
-                                        </MudTable>
-                                    </MudAlert>
-                                </ItemContent>
-                                <ItemOpposite>
-                                    <MudText Color="Color.Success">2</MudText>
-                                </ItemOpposite>
-                            </MudTimelineItem>
-                        </MudTimeline>
+                        <MudGrid Spacing="2">
+                            @foreach (var component in componentSet)
+                            {
+                                <MudItem xs="4">
+                                    <MudCard>
+                                        <MudCardContent>
+                                            <MudText Typo="Typo.h5">@component.Recipe.DisplayName</MudText>
+                                            <MudText Typo="Typo.h6">@Math.Round(component.Multiplier * 100)% | @component.Recipe.ProducedInReadable</MudText>
+                                            <MudTable Items="component.Input" Hover="true" Breakpoint="Breakpoint.None" Dense="true" Class="mt-2">
+                                                <ColGroup>
+                                                    <col style="width: 65%;"/>
+                                                    <col/>
+                                                </ColGroup>
+                                                <HeaderContent>
+                                                    <MudTh>Input</MudTh>
+                                                    <MudTh>IPM</MudTh>
+                                                </HeaderContent>
+                                                <RowTemplate>
+                                                    <MudTd DataLabel="Input">@(SatisfactoryModel.ItemDescriptorByClassName(context.ItemClassName)?.DisplayName ?? context.ItemClassName)</MudTd>
+                                                    <MudTd DataLabel="IPM">@Math.Round(context.Amount, 2)</MudTd>
+                                                </RowTemplate>
+                                            </MudTable>
+                                            <MudTable Items="component.Output" Hover="true" Breakpoint="Breakpoint.None" Dense="true" Class="mt-2">
+                                                <ColGroup>
+                                                    <col style="width: 65%;"/>
+                                                    <col/>
+                                                </ColGroup>
+                                                <HeaderContent>
+                                                    <MudTh>Output</MudTh>
+                                                    <MudTh>IPM</MudTh>
+                                                </HeaderContent>
+                                                <RowTemplate>
+                                                    <MudTd DataLabel="Output">@(SatisfactoryModel.ItemDescriptorByClassName(context.ItemClassName)?.DisplayName ?? context.ItemClassName)</MudTd>
+                                                    <MudTd DataLabel="IPM">@Math.Round(context.Amount, 2)</MudTd>
+                                                </RowTemplate>
+                                            </MudTable>
+                                        </MudCardContent>
+                                    </MudCard>
+                                </MudItem>
+                            }
+                        </MudGrid >
                     </MudPaper>
                 </MudItem>
             }
         }
     </MudGrid>
-    
 </MudContainer>
 
 @code {
@@ -122,22 +85,6 @@
     private double SelectedItemDescriptorAmount { get; set; } = 1.0;
     
     private BasicSolution? Solution { get; set; }
-
-    private IEnumerable<SolutionTableRowElement> SolutionTableRowElements => Solution?.Components.SelectMany(component => component.Output.Select(itemRate => new SolutionTableRowElement(component, itemRate))) ?? [];
-    
-    private TableGroupDefinition<SolutionTableRowElement> SolutionTableGroupDefinition { get; } = new()
-    {
-        GroupName = "Recipe",
-        Expandable = true,
-        Indentation = true,
-        Selector = el => el.SolutionComponent.Recipe.DisplayName
-    };
-    
-    private class SolutionTableRowElement(BasicSolution.SolutionComponent solutionComponent, ItemRate itemRate)
-    {
-        public BasicSolution.SolutionComponent SolutionComponent { get; } = solutionComponent;
-        public ItemRate ItemRate { get; } = itemRate;
-    }
     
     protected override Task OnInitializedAsync()
     {

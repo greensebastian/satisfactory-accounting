@@ -25,6 +25,19 @@ public class SatisfactoryModel
     
     public ItemDescriptor? ItemDescriptorByClassName(string className) =>
         ItemDescriptors.Classes.FirstOrDefault(r => r.ClassName.Equals(className, StringComparison.InvariantCultureIgnoreCase));
+    
+    public ResourceDescriptor? ResourceDescriptorByClassName(string className) =>
+        ResourceDescriptors.Classes.FirstOrDefault(r => r.ClassName.Equals(className, StringComparison.InvariantCultureIgnoreCase));
+
+    public bool IsBaseResource(string className)
+    {
+        if (ResourceDescriptorByClassName(className) is not null)
+        {
+            return true;
+        }
+
+        return false;
+    }
 }
 
 // ReSharper disable once ClassNeverInstantiated.Global

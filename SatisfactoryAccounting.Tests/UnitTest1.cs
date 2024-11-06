@@ -50,6 +50,15 @@ public class UnitTest1(ModelFixture fixture) : IClassFixture<ModelFixture>
     }
     
     [Fact]
+    public async Task CanSolveSupercomputer()
+    {
+        var model = await fixture.GetModel();
+
+        var solution = new BasicSolution(model, [new ItemRate(model.FindItemDescriptor("Supercomputer")!.ClassName, 1)]);
+        solution.Should().NotBeNull();
+    }
+    
+    [Fact]
     public async Task CanParseProducedInForIronRod()
     {
         var model = await fixture.GetModel();
