@@ -7,6 +7,7 @@ namespace SatisfactoryAccounting.Model;
 
 public class SatisfactoryModel
 {
+    public const double FloatingPointTolerance = 0.000001;
     public SatisfactoryResourceCollection<Recipe> Recipes { get; }
     public SatisfactoryResourceCollection<ItemDescriptor> ItemDescriptors { get; }
     public SatisfactoryResourceCollection<ResourceDescriptor> ResourceDescriptors { get; }
@@ -14,7 +15,17 @@ public class SatisfactoryModel
     public SatisfactoryModel(List<IntermediateSatisfactoryResourceCollection> resourceCollections)
     {
         Recipes = resourceCollections.Single(rc => rc.NativeClass == Recipe.NativeClass).ToType<Recipe>();
-        ItemDescriptors = resourceCollections.Single(rc => rc.NativeClass == ItemDescriptor.NativeClass).ToType<ItemDescriptor>();
+        var allItemDescriptors = resourceCollections.Where(rc => ItemDescriptor.NativeClasses.Contains(rc.NativeClass));
+        var joinedItemDescriptors = new JArray();
+        foreach (var itemDescriptorCollection in allItemDescriptors)
+        {
+            foreach (var itemDescriptor in itemDescriptorCollection.Classes)
+            {
+                joinedItemDescriptors.Add(itemDescriptor);
+            }
+        }
+
+        ItemDescriptors = new IntermediateSatisfactoryResourceCollection(ItemDescriptor.NativeClasses[0], joinedItemDescriptors).ToType<ItemDescriptor>();
         ResourceDescriptors = resourceCollections.Single(rc => rc.NativeClass == ResourceDescriptor.NativeClass).ToType<ResourceDescriptor>();
     }
 
@@ -76,7 +87,9 @@ public record Recipe(
     public const string NativeClass = "/Script/CoreUObject.Class'/Script/FactoryGame.FGRecipe'";
     public string DisplayName { get; } = MDisplayName;
     public ItemRates Ingredients => _ingredients ??= ItemRate.FromItemClassCollectionString(MIngredients, ManufacturingDuration);
+    public bool HasIngredient(string itemClassName) => Ingredients.Any(i => i.ItemClassName == itemClassName);
     public ItemRates Product => _product ??= ItemRate.FromItemClassCollectionString(MProduct, ManufacturingDuration);
+    public bool HasProduct(string itemClassName) => Product.Any(i => i.ItemClassName == itemClassName);
     public TimeSpan ManufacturingDuration { get; } = TimeSpan.FromSeconds(double.Parse(MManufactoringDuration, CultureInfo.InvariantCulture));
     public List<string> ProducedIn { get; } = Regexes.ProducedIn.Matches(MProducedIn).Select(match => match.Value).ToList();
     public string ProducedInReadable
@@ -88,10 +101,12 @@ public record Recipe(
         }
     }
 
-    public bool IsAlternate { get; } = ClassName.StartsWith("Recipe_Alternate_");
+    public bool IsAlternate { get; } = ClassName.StartsWith("Recipe_Alternate_") || ClassName == "Recipe_PureAluminumIngot_C";
 
     public double GetSmallestRequiredMultiplierToMake(List<ItemRate> items) => items
         .Select(desired => desired.Amount / Product.Single(p => p.ItemClassName == desired.ItemClassName).Amount).Max();
+
+    public bool IsUnpackaging { get; } = ClassName.StartsWith("Recipe_Unpackage");
 }
 
 public class ItemRates(IEnumerable<ItemRate> items) : IReadOnlyCollection<ItemRate>
@@ -100,7 +115,24 @@ public class ItemRates(IEnumerable<ItemRate> items) : IReadOnlyCollection<ItemRa
 
     public ItemRate this[string className] => _items.Single(i => i.ItemClassName == className);
     
-    public ItemRates Scale(double factor) => new(this.Select(i => i with { Amount = i.Amount * factor } ));
+    private ItemRates Scale(double factor) => new(this.Select(i => i with { Amount = i.Amount * factor } ));
+
+    public static ItemRates operator *(ItemRates rates, double factor) => rates.Scale(factor);
+    
+    public static ItemRates operator +(ItemRates first, ItemRates second)
+    {
+        var combined = new Dictionary<string, double>();
+        foreach (var itemRateToAdd in first.Concat(second))
+        {
+            combined.TryAdd(itemRateToAdd.ItemClassName, 0);
+            combined[itemRateToAdd.ItemClassName] += itemRateToAdd.Amount;
+        }
+
+        return new ItemRates(combined.Where(i => Math.Abs(i.Value) > SatisfactoryModel.FloatingPointTolerance).Select(i => new ItemRate(i.Key, i.Value)));
+    }
+
+    public static ItemRates operator -(ItemRates first, ItemRates second) => first + second * -1;
+    
     public IEnumerator<ItemRate> GetEnumerator() => _items.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -194,7 +226,13 @@ public record ItemDescriptor(
     string MResourceSinkPoints
 )
 {
-    public const string NativeClass = "/Script/CoreUObject.Class'/Script/FactoryGame.FGItemDescriptor'";
+    public static readonly IReadOnlyList<string> NativeClasses =
+    [
+        "/Script/CoreUObject.Class'/Script/FactoryGame.FGItemDescriptor'",
+        "/Script/CoreUObject.Class'/Script/FactoryGame.FGItemDescriptorNuclearFuel'",
+        "/Script/CoreUObject.Class'/Script/FactoryGame.FGItemDescriptorBiomass'",
+        "/Script/CoreUObject.Class'/Script/FactoryGame.FGItemDescriptorPowerBoosterFuel'"
+    ];
     public string DisplayName { get; } = MDisplayName;
 }
 

@@ -4,12 +4,14 @@ namespace SatisfactoryAccounting.Model;
 
 public class BasicSolution
 {
-    private const double FloatingPointTolerance = 0.0001;
     public SatisfactoryModel Model { get; }
     public ItemRates DesiredProducts { get; }
+    public ItemRates BaseResources { get; }
     public ItemRates AvailableProducts { get; }
     public List<SolutionComponent> Components { get; } = new();
     public List<List<SolutionComponent>> ComponentsByDependencyTier { get; }
+    public ItemRates Input { get; }
+    public ItemRates TotalItems { get; }
 
     public IEnumerable<List<SolutionComponent>> ComputeComponentsByDependencyTier()
     {
@@ -41,7 +43,8 @@ public class BasicSolution
     {
         Model = model;
         DesiredProducts = new ItemRates(desiredProducts);
-        AvailableProducts = new ItemRates(Model.Recipes.Classes.Select(rd => new ItemRate(rd.ClassName, double.MaxValue)));
+        BaseResources = GetBaseResources(model);
+        AvailableProducts = BaseResources;
         if (availableProducts != null) AvailableProducts = new ItemRates(AvailableProducts.Concat(availableProducts));
 
         foreach (var desiredProduct in DesiredProducts)
@@ -50,14 +53,22 @@ public class BasicSolution
         }
 
         ComponentsByDependencyTier = ComputeComponentsByDependencyTier().Reverse().ToList();
+        Input = ComponentsByDependencyTier.Last()
+            .Aggregate(new ItemRates([]), (rates, component) => rates + component.Input);
+        TotalItems = ComponentsByDependencyTier.AsEnumerable().Reverse().Aggregate(new ItemRates([]),
+            (tierRates, tierComponents) => tierComponents.Aggregate(tierRates,
+                (rates, component) => rates - component.Input + component.Output));
     }
 
     private void AddDesiredProduct(ItemRate item)
     {
-        if (Model.ResourceDescriptors.Classes.Any(c => c.ClassName == item.ItemClassName)) return;
+        if (BaseResources.Any(c => c.ItemClassName == item.ItemClassName)) return;
         
         SolutionComponent? component = null;
-        var existingComponents = Components.Where(c => c.Recipe.Product.Any(p => p.ItemClassName == item.ItemClassName)).ToArray();
+        var existingComponents = Components
+            .Where(c => c.Recipe.HasProduct(item.ItemClassName))
+            .Where(c => !c.Recipe.HasIngredient(item.ItemClassName)) // Avoid self-feeding recipes
+            .ToArray();
         foreach (var existingComponent in existingComponents)
         {
             var outputOfItem = existingComponent.Recipe.Product.Single(p => p.ItemClassName == item.ItemClassName).Amount;
@@ -84,8 +95,8 @@ public class BasicSolution
     {
         public Recipe Recipe { get; } = recipe;
         public double Multiplier => Recipe.GetSmallestRequiredMultiplierToMake(Desired.Select(i => new ItemRate(i.Key, i.Value)).ToList());
-        public ItemRates Output => Recipe.Product.Scale(Multiplier);
-        public ItemRates Input => Recipe.Ingredients.Scale(Multiplier);
+        public ItemRates Output => Recipe.Product * Multiplier;
+        public ItemRates Input => Recipe.Ingredients * Multiplier;
         public override string ToString()
         {
             var sb = new StringBuilder();
@@ -104,15 +115,15 @@ public class BasicSolution
             return sb.ToString();
         }
 
-        private Dictionary<string, double> Desired { get; } = recipe.Product.ToDictionary(r => r.ItemClassName, r => 0d);
+        private Dictionary<string, double> Desired { get; } = recipe.Product.ToDictionary(r => r.ItemClassName, _ => 0d);
         
         public IEnumerable<ItemRate> AddOutput(ItemRate itemRate)
         {
             var oldMultiplier = Multiplier;
             Desired[itemRate.ItemClassName] += itemRate.Amount;
             var newMultiplier = Multiplier;
-            var oldRequirements = Recipe.Ingredients.Scale(oldMultiplier);
-            var newRequirements = Recipe.Ingredients.Scale(newMultiplier);
+            var oldRequirements = Recipe.Ingredients * oldMultiplier;
+            var newRequirements = Recipe.Ingredients * newMultiplier;
             foreach (var newRequirement in newRequirements)
             {
                 var oldRequirement =
@@ -121,7 +132,7 @@ public class BasicSolution
                 {
                     yield return newRequirement;
                 }
-                else if (Math.Abs(oldRequirement.Amount - newRequirement.Amount) > FloatingPointTolerance)
+                else if (Math.Abs(oldRequirement.Amount - newRequirement.Amount) > SatisfactoryModel.FloatingPointTolerance)
                 {
                     yield return oldRequirement with { Amount = newRequirement.Amount - oldRequirement.Amount };
                 }
@@ -129,23 +140,31 @@ public class BasicSolution
         }
     }
 
-    private Recipe GetRecipe(string className)
+    private Recipe GetRecipe(string itemClassName)
     {
-        var recipes = Model.Recipes.Classes.Where(recipe => recipe.Product.Any(product => product.ItemClassName == className) && !recipe.IsAlternate).ToList();
+        var recipes = Model.Recipes.Classes
+            .Where(recipe => recipe.HasProduct(itemClassName))
+            .Where(recipe => !recipe.IsAlternate)
+            .Where(recipe => !recipe.IsUnpackaging)
+            .ToList();
         if (recipes.Count > 1)
         {
-            if (recipes.All(r => r.ClassName.Contains("Plastic", StringComparison.InvariantCultureIgnoreCase)))
+            return itemClassName switch
             {
-                return recipes.Single(r =>
-                    !r.ClassName.Contains("Residual", StringComparison.InvariantCultureIgnoreCase));
-            }
-            throw new ApplicationException($"Multiple recipes outputting {className} found: {string.Join(", ", recipes.Select(r => r.ClassName))}");
+                "Desc_Plastic_C" => recipes.Single(r => r.ClassName == "Recipe_Plastic_C"),
+                "Desc_SulfuricAcid_C" => recipes.Single(r => r.ClassName == "Recipe_SulfuricAcid_C"),
+                "Desc_Silica_C" => recipes.Single(r => r.ClassName == "Recipe_Silica_C"),
+                _ => throw new ApplicationException(
+                    $"Multiple recipes outputting {itemClassName} found: {string.Join(", ", recipes.Select(r => r.ClassName))}")
+            };
         }
         if (recipes.Count > 0)
         {
             return recipes[0];
         }
 
-        throw new ApplicationException($"No recipes outputting {className} found");
+        throw new ApplicationException($"No recipes outputting {itemClassName} found");
     }
+
+    private ItemRates GetBaseResources(SatisfactoryModel model) => new(model.ResourceDescriptors.Classes.Select(c => new ItemRate(c.ClassName, double.MaxValue)));
 }

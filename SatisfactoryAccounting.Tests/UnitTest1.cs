@@ -41,7 +41,7 @@ public class UnitTest1(ModelFixture fixture) : IClassFixture<ModelFixture>
     }
     
     [Fact]
-    public async Task CanSolveUraniumFuelRod()
+    public async Task CanSolveEncasedUraniumCell()
     {
         var model = await fixture.GetModel();
 
@@ -64,5 +64,23 @@ public class UnitTest1(ModelFixture fixture) : IClassFixture<ModelFixture>
         var model = await fixture.GetModel();
         var recipe = model.Recipes.Classes.Single(r => r.ClassName.Contains("IronRod") && !r.IsAlternate);
         recipe.ProducedInReadable.Should().Be("Build_ConstructorMk1_C");
+    }
+    
+    [Fact]
+    public async Task CanSolveUraniumFuelRod()
+    {
+        var model = await fixture.GetModel();
+
+        var solution = new BasicSolution(model, [new ItemRate(model.FindItemDescriptor("NuclearFuelRod")!.ClassName, 1)]);
+        solution.Should().NotBeNull();
+    }
+    
+    [Fact]
+    public async Task CanSolveSilica()
+    {
+        var model = await fixture.GetModel();
+
+        var solution = new BasicSolution(model, [new ItemRate(model.FindItemDescriptor("Silica")!.ClassName, 1)]);
+        solution.Should().NotBeNull();
     }
 }

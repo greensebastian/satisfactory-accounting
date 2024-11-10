@@ -10,11 +10,12 @@
     <MudGrid Spacing="4">
         <MudItem xs="12">
             <MudPaper Class="pa-4">
+                <MudText Typo="Typo.h2" Class="mb-4">Satisfactory Model</MudText>
                 <MudButton Variant="Variant.Filled" FullWidth="true" Color="Color.Primary" OnClick="LoadModel">Load Model</MudButton>
                 @if (SatisfactoryModel is not null)
                 {
                     <MudItem xs="12">
-                        <h1>Satisfactory Model</h1>
+                        <MudText Typo="Typo.h5" Class="mt-4">Select Recipe</MudText>
                         There are @SatisfactoryModel.Recipes.Classes.Count recipes loaded!
                         <MudForm Spacing="4">
                             <MudAutocomplete @bind-Value="SelectedItemDescriptorDisplayName" SearchFunc="SearchItemDescriptorAsync" Placeholder="Enter for item to make..." Clearable="true"></MudAutocomplete>
@@ -27,6 +28,25 @@
         </MudItem>
         @if (Solution is not null && SatisfactoryModel is not null)
         {
+            <MudItem xs="12">
+                <MudPaper Class="pa-4">
+                    <MudText Typo="Typo.h5">Total Balance</MudText>
+                    <MudTable Items="Solution.TotalItems.OrderByDescending(i => i.Amount)" Hover="true" Breakpoint="Breakpoint.None" Dense="true" Class="mt-2">
+                        <ColGroup>
+                            <col style="width: 65%;"/>
+                            <col/>
+                        </ColGroup>
+                        <HeaderContent>
+                            <MudTh>Item</MudTh>
+                            <MudTh>IPM</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Item">@(SatisfactoryModel.ItemDescriptorByClassName(context.ItemClassName)?.DisplayName ?? context.ItemClassName)</MudTd>
+                            <MudTd DataLabel="IPM">@Math.Round(context.Amount, 2)</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudPaper>
+            </MudItem>
             @foreach (var componentSet in Solution.ComponentsByDependencyTier)
             {
                 <MudItem xs="12">
